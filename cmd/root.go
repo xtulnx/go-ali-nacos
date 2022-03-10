@@ -117,6 +117,7 @@ func initConfig() {
 		viper.SetConfigName(".ali-nacos")
 	}
 
+	viper.SetEnvPrefix("j00")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

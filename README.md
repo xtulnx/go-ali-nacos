@@ -7,9 +7,21 @@
 
 * [x] 自动拉取配置，并写入约定的文件中。
 * [x] 在配置更新后，触发约定的外部命令，如刷新 nginx 等
+* [ ] 支持多配置文件模式
+	* 配置动态导入方式
+        * 如 `outfile="SYSCONF://..."`
+    * 树形结构，多实例化
+        * 子实例树可以销毁
+* [ ] 约定内置命令
 
 ## 配置示例
 
+* 环境变量:
+  * J00_ENDPOINT=xxx.com
+  * env J00_NACOS.ENDPOINT=b.com  go run main.go
+
+
+* 配置文件
 
 ```toml
 [nacos]

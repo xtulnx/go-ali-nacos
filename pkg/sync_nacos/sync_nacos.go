@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 )
@@ -34,6 +35,7 @@ type jobKey struct {
 type jobFile struct {
 	outfile string // 文件路径
 	hash    string // 校验
+	schema  string
 }
 
 type jobStatus struct {
@@ -64,6 +66,13 @@ func Hash(content string) (md string) {
 	_, _ = io.WriteString(h, content)
 	md = fmt.Sprintf("%x", h.Sum(nil))
 	return
+}
+
+func findSchema(s string) string {
+	if p := strings.Index(s, "://"); p > 0 {
+		return s[:p+3]
+	}
+	return ""
 }
 
 func newClient(cfgNacos config.NacosConfig) (config_client.IConfigClient, error) {
@@ -119,12 +128,18 @@ func newJobs(cfgJobs []config.NacosJobConfig, namespaceId string) map[jobKey]*jo
 			// FIXME: 检查输出路径是否为系统文件
 			// ...
 
-			var hash string
-			if b1, err := ioutil.ReadFile(f.Outfile); err == nil {
-				hash = Hash(string(b1))
+			_hash, _outfile := "", f.Outfile
+			_schema := findSchema(f.Outfile)
+			switch _schema {
+			case config.SCHEME_SYS_CONFIG, config.SCHEME_SYS_MEMORY:
+				_outfile = _outfile[len(_schema):]
+			default:
+				if b1, err := ioutil.ReadFile(f.Outfile); err == nil {
+					_hash = Hash(string(b1))
+				}
 			}
 
-			outfile[k] = jobFile{outfile: f.Outfile, hash: hash}
+			outfile[k] = jobFile{outfile: _outfile, hash: _hash, schema: _schema}
 		}
 		if len(outfile) > 0 {
 			st := &jobStatus{
@@ -173,10 +188,17 @@ func (J *SyncNacos) onChange(ctx context.Context, group, dataId, data string) {
 				return
 			}
 
-			err := ioutil.WriteFile(of.outfile, []byte(data), fs.ModePerm)
-			if err != nil {
-				log.Printf("[FAIL]Write file %s: %v", of.outfile, err)
-				return
+			switch of.schema {
+			case config.SCHEME_SYS_CONFIG:
+				// TODO:
+			case config.SCHEME_SYS_MEMORY:
+				// TODO:
+			default:
+				err := ioutil.WriteFile(of.outfile, []byte(data), fs.ModePerm)
+				if err != nil {
+					log.Printf("[FAIL]Write file %s: %v", of.outfile, err)
+					return
+				}
 			}
 			of.hash = hash
 			// 启动任务

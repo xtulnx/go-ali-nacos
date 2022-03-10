@@ -9,6 +9,11 @@ var (
 	BuildTime = "2022-02-27T23:09:57+0800" // 编译时间
 )
 
+const (
+	SCHEME_SYS_CONFIG = "SYSCONF://" // 配置依赖加载
+	SCHEME_SYS_MEMORY = "SYSMEM://"  // 输出到内存，以环境变量形式提供
+)
+
 type Config struct {
 	NacosCfg  NacosConfig      `json:"nacos" toml:"nacos" mapstructure:"nacos"`
 	NacosJobs []NacosJobConfig `json:"nacosJobs" toml:"nacosJobs" mapstructure:"nacosJobs"`
@@ -57,5 +62,6 @@ type NacosJobFileConfig struct {
 	DataId string `json:"dataId" toml:"dataId" mapstructure:"dataId"`
 	Group  string `json:"group" toml:"group" mapstructure:"group"`
 	// 输出文件
+	// 特殊文件：SYSCONF://{可选配置Id} 用于重新加载配置
 	Outfile string `json:"outfile" toml:"outfile" mapstructure:"outfile"`
 }

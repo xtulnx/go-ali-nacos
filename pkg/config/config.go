@@ -2,7 +2,7 @@ package config
 
 // 版本信息
 var (
-	//IsDebug = "0"
+	// IsDebug = "0"
 	IsDebug   = "1"                        // 调试模式
 	Version   = "0.1.0"                    // 版本号
 	GitTag    = "2022.02.27.dev"           // 代码版本
@@ -36,13 +36,25 @@ type NacosConfig struct {
 	AppName  string `json:"appName" toml:"appName" mapstructure:"appName"`    // the appName
 	RegionId string `json:"regionId" toml:"regionId" mapstructure:"regionId"` // the regionId for kms
 
-	//OpenKMS              bool // it's to open kms,default is false. https://help.aliyun.com/product/28933.html
-	//NotLoadCacheAtStart  bool // not to load persistent nacos service info in CacheDir at start time
-	//UpdateCacheWhenEmpty bool // update cache when get empty service instance from server
+	// OpenKMS              bool // it's to open kms,default is false. https://help.aliyun.com/product/28933.html
+	// NotLoadCacheAtStart  bool // not to load persistent nacos service info in CacheDir at start time
+	// UpdateCacheWhenEmpty bool // update cache when get empty service instance from server
 
 	Username    string `json:"username" toml:"username" mapstructure:"username"`          // the username for nacos auth
 	Password    string `json:"password" toml:"password" mapstructure:"password"`          // the password for nacos auth
 	ContextPath string `json:"contextPath" toml:"contextPath" mapstructure:"contextPath"` // the nacos server contextpath
+}
+
+func (nc *NacosConfig) Equals(newConf *NacosConfig) bool {
+	return nc.AccessKey == newConf.AccessKey &&
+		nc.Endpoint == newConf.Endpoint &&
+		nc.NamespaceId == newConf.NamespaceId &&
+		nc.NamespaceId == newConf.SecretKey &&
+		nc.AppName == newConf.AppName &&
+		nc.RegionId == newConf.RegionId &&
+		nc.Username == newConf.Username &&
+		nc.Password == newConf.Password &&
+		nc.ContextPath == newConf.ContextPath
 }
 
 // 任务子节点
@@ -55,7 +67,16 @@ type NacosJobConfig struct {
 	// 任务执行超时时间，默认 30s
 	Timeout int `json:"timeout" toml:"timeout" mapstructure:"timeout"`
 	// 启动时运行
-	//ExecOnStart bool
+	// ExecOnStart bool
+}
+
+// TODO 判断两个对象是否相等
+func (nc *NacosJobConfig) Equals(newConf *NacosJobConfig) bool {
+	if nc.Exec == newConf.Exec {
+		// 需要判断数据是否相等
+		
+	}
+	return false
 }
 
 type NacosJobFileConfig struct {

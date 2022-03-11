@@ -17,17 +17,18 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/cobra"
-	"go-ali-nacos/pkg/config"
-	"go-ali-nacos/pkg/sync_nacos"
-	"golang.org/x/net/context"
-	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
+
+	"go-ali-nacos/pkg/config"
+	"go-ali-nacos/pkg/logs"
+	"go-ali-nacos/pkg/sync_nacos"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/spf13/viper"
 )
@@ -45,37 +46,39 @@ var rootCmd = &cobra.Command{
 			c.WeaklyTypedInput = true
 		})
 		if err != nil {
-			log.Fatal(err)
+			zap.L().Fatal("获取本地配置文件Unmarshal出错", zap.Error(err))
 		}
-
+		root := sync_nacos.NewNode(&cfg, "", "")
+		root.Watch()
 		interrupt := make(chan os.Signal, 1)
 		signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		wg := sync.WaitGroup{}
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err = sync_nacos.Main(ctx, cfg)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}()
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			select {
-			case <-interrupt:
-				log.Println("interrupt")
-				cancel()
-				break
-			case <-ctx.Done():
-				log.Println("cancel")
-				break
-			}
-		}()
-		wg.Wait()
+		<-interrupt
+		root.UnWatch()
+		// ctx, cancel := context.WithCancel(context.Background())
+		// defer cancel()
+		// wg := sync.WaitGroup{}
+		// wg.Add(1)
+		// go func() {
+		// 	defer wg.Done()
+		// 	err = sync_nacos.Main(ctx, cfg)
+		// 	if err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// }()
+		// wg.Add(1)
+		// go func() {
+		// 	defer wg.Done()
+		// 	select {
+		// 	case <-interrupt:
+		// 		log.Println("interrupt")
+		// 		cancel()
+		// 		break
+		// 	case <-ctx.Done():
+		// 		log.Println("cancel")
+		// 		break
+		// 	}
+		// }()
+		// wg.Wait()
 	},
 }
 
@@ -86,6 +89,7 @@ func Execute() {
 }
 
 func init() {
+	logs.InitZapLogger("log", "nacos", zapcore.DebugLevel)
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -122,6 +126,8 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		zap.L().Debug("config file path", zap.String("file", viper.ConfigFileUsed()))
+	} else {
+		zap.L().Fatal("config file is not exists", zap.String("file", viper.ConfigFileUsed()))
 	}
 }

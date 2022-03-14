@@ -18,10 +18,15 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"log"
+	"os"
 )
 
+var cfgFile string
+
 var rootCmd = &cobra.Command{
-	Use:   "go-ali-nacos",
+	Use:   os.Args[0],
 	Short: "同步 nacos 配置",
 	Long:  ``,
 	CompletionOptions: cobra.CompletionOptions{
@@ -39,11 +44,30 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
+	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-ali-nacos.yaml)")
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+		viper.AddConfigPath("./config")
+		viper.AddConfigPath("./")
+		viper.AddConfigPath(home)
+		viper.SetConfigType("toml")
+		viper.SetConfigName(".ali-nacos")
+	}
+
+	viper.SetEnvPrefix("j00")
+	viper.AutomaticEnv()
+
+	// If a config file is found, read it in.
+	if err := viper.ReadInConfig(); err == nil {
+		log.Printf("config file path: %s", viper.ConfigFileUsed())
+	}
 }

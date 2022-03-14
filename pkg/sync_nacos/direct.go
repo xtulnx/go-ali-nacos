@@ -1,21 +1,58 @@
-package once
+package sync_nacos
 
 import (
 	"fmt"
-	"io"
-	"os"
-
-	"go-ali-nacos/pkg/common"
-	"go-ali-nacos/pkg/config"
-
-	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
+	"go-ali-nacos/pkg/config"
 	"go.uber.org/zap"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
-func Fetch(c config.CommonParams) {
+// 写入本地磁盘
+func WriteFile(file, content string) error {
+	_, err := os.Stat(file)
+	if os.IsNotExist(err) {
+		fileBase := filepath.Dir(file)
+		err := os.MkdirAll(fileBase, os.ModePerm)
+		if err != nil {
+			zap.L().Error("创建目录出错", zap.String("目录", fileBase), zap.Error(err))
+			return err
+		}
+	} else if err != nil {
+		zap.L().Error("获取文件数据出错", zap.String("文件", file), zap.Error(err))
+		return err
+	}
+	err = os.WriteFile(file, []byte(content), os.ModePerm)
+	if err != nil {
+		zap.L().Error("写文件出错", zap.Error(err), zap.String("文件", file))
+		return err
+	}
+	return nil
+}
+
+func getClient(cfg config.DirectConfig) (config_client.IConfigClient, error) {
+	if cfg.NacosCfg == nil {
+		return nil, fmt.Errorf("缺少必要参数")
+	}
+	if cfg.NacosCfg.NamespaceId == "" {
+		return nil, fmt.Errorf("缺少 namespaceId ")
+	}
+	if cfg.DataId == "" || cfg.Group == "" {
+		return nil, fmt.Errorf("缺少目标资源")
+	}
+	cfg.NacosCfg.LogLevel = "error"
+	client, err := NewClient(*cfg.NacosCfg)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func Fetch(c config.DirectConfig) error {
 	client, err := getClient(c)
 	if err != nil {
 		zap.L().Fatal("初始化client出错", zap.Error(err))
@@ -28,23 +65,25 @@ func Fetch(c config.CommonParams) {
 		zap.L().Fatal("获取配置数据出错", zap.Error(err), zap.Any("config", c))
 	}
 	if len(c.File) > 0 {
-		err = common.WriteFile(c.File, content)
+		err := ioutil.WriteFile(c.File, []byte(content), os.ModePerm)
+		err = WriteFile(c.File, content)
 		if err != nil {
 			zap.L().Fatal("文件写入失败", zap.Error(err), zap.String("file", c.File))
 		}
 	} else {
 		fmt.Fprintln(os.Stdout, content)
 	}
+	return nil
 }
 
-func Push(c config.CommonParams) {
+func Push(c config.DirectConfig) error {
 	client, err := getClient(c)
 	if err != nil {
 		zap.L().Fatal("初始化client出错", zap.Error(err))
 	}
-	content := ""
+	var content string
 	if len(c.File) > 0 {
-		contentByte, err := os.ReadFile(c.File)
+		contentByte, err := ioutil.ReadFile(c.File)
 		if err != nil {
 			zap.L().Fatal("读取配置文件数据出错", zap.String("file", c.File), zap.Error(err))
 		}
@@ -74,26 +113,5 @@ func Push(c config.CommonParams) {
 	if err != nil {
 		zap.L().Fatal("push配置数据出错", zap.String("dataId", c.DataId), zap.String("group", c.Group), zap.Error(err))
 	}
-}
-
-func getClient(c config.CommonParams) (config_client.IConfigClient, error) {
-	clientConfig := &constant.ClientConfig{
-		Endpoint:             c.Endpoint + ":8080",
-		NamespaceId:          c.NamespaceId,
-		AccessKey:            c.AccessKey,
-		SecretKey:            c.SecretKey,
-		TimeoutMs:            5 * 1000,
-		OpenKMS:              false,
-		NotLoadCacheAtStart:  true,
-		UpdateCacheWhenEmpty: true,
-		Username:             c.Username,
-		Password:             c.Password,
-	}
-
-	client, err := clients.NewConfigClient(
-		vo.NacosClientParam{
-			ClientConfig: clientConfig,
-		},
-	)
-	return client, err
+	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"go-ali-nacos/pkg/common"
 	"go-ali-nacos/pkg/config"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
@@ -101,7 +100,7 @@ func (n *Node) writeFile(dataId, group, outfile string) {
 			return
 		}
 		// 需要写文件
-		err = common.WriteFile(outfile, data)
+		err = WriteFile(outfile, data)
 		if err != nil {
 			zap.L().Error("write file error", zap.Error(err))
 			return
@@ -190,7 +189,7 @@ func (j *Job) Run() {
 }
 
 func NewNode(conf *config.Config, group, dataId string) *Node {
-	client, err := newClient(conf.NacosCfg)
+	client, err := NewClient(conf.NacosCfg)
 	if err != nil {
 		zap.L().Fatal("nacos客户端初始化出错", zap.Error(err))
 	}

@@ -64,3 +64,50 @@ group = "nginx_local"
 outfile = "log/local.dev.conf"
 ```
 
+## 实践
+
+> 说明：
+> 
+> 这里假定已经在 `.ali-nacos.toml` 中配置 ACM 基本参数。
+> 
+> 如 endpoint、namespaceId、accessKey、secretKey 。
+> 详情见 [官网](https://acmnext.console.aliyun.com/)
+
+
+### 配置资源更新
+
+> 在 macOS 环境实测 2022.03.14
+
+
+1. 推送资源（二进制内容以 base64 编码，不能过大）
+   
+    ```shell
+    tar -cz README.md LICENSE | base64 -b 64 | ./jNacos push -g dev_cd -d l1.tar.gz
+    ````
+2. 拉取查看 文件清单
+
+    ```shell
+    ./jNacos fetch -g dev_cd -d l1.tar.gz | base64 -d | tar -tz
+    ```
+
+3. 拉取查看 解压文件
+
+    ```shell
+    mkdir -p out && ./jNacos fetch -g dev_cd -d l1.tar.gz | base64 -d | tar -xz -C out && ls -l out
+    ```
+
+4. 拉取查看 直接查看指定某个文件
+
+    ```shell
+    ./jNacos fetch -g dev_cd -d l1.tar.gz | base64 -d | tar -xOz README.md | head -3
+    ./jNacos fetch -g dev_cd -d l1.tar.gz | base64 -d | tar -xOz LICENSE | head -3
+    ```
+
+### 多配置依赖
+
+TODO:
+
+### 复杂脚本
+
+TODO:
+

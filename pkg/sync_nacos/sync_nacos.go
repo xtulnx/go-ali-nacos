@@ -75,7 +75,10 @@ func findSchema(s string) string {
 	return ""
 }
 
-func newClient(cfgNacos config.NacosConfig) (config_client.IConfigClient, error) {
+func NewClient(cfgNacos config.NacosConfig) (config_client.IConfigClient, error) {
+	if cfgNacos.NamespaceId == "" {
+		return nil, fmt.Errorf("缺少 namespaceId")
+	}
 	clientConfig := &constant.ClientConfig{
 		//
 		Endpoint:    cfgNacos.Endpoint + ":8080",
@@ -91,6 +94,8 @@ func newClient(cfgNacos config.NacosConfig) (config_client.IConfigClient, error)
 		Username:    cfgNacos.Username,
 		Password:    cfgNacos.Password,
 		ContextPath: cfgNacos.ContextPath,
+
+		LogLevel: cfgNacos.LogLevel,
 
 		OpenKMS:              false,
 		NotLoadCacheAtStart:  true,
@@ -158,7 +163,7 @@ func newJobs(cfgJobs []config.NacosJobConfig, namespaceId string) map[jobKey]*jo
 
 func NewSyncNacos(cfg config.Config) (*SyncNacos, error) {
 	//
-	client, err := newClient(cfg.NacosCfg)
+	client, err := NewClient(cfg.NacosCfg)
 	if err != nil {
 		return nil, err
 	}

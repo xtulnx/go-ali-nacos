@@ -3,6 +3,7 @@ package config
 // 版本信息
 var (
 	// IsDebug = "0"
+	App       = "jNacos"
 	IsDebug   = "1"                        // 调试模式
 	Version   = "0.1.0"                    // 版本号
 	GitTag    = "2022.02.27.dev"           // 代码版本
@@ -17,9 +18,6 @@ const (
 type Config struct {
 	NacosCfg  NacosConfig      `json:"nacos" toml:"nacos" mapstructure:"nacos"`
 	NacosJobs []NacosJobConfig `json:"nacosJobs" toml:"nacosJobs" mapstructure:"nacosJobs"`
-
-	// 自动刷新周期，单位秒
-	AutoRefresh int
 }
 
 type NacosConfig struct {
@@ -43,6 +41,8 @@ type NacosConfig struct {
 	Username    string `json:"username" toml:"username" mapstructure:"username"`          // the username for nacos auth
 	Password    string `json:"password" toml:"password" mapstructure:"password"`          // the password for nacos auth
 	ContextPath string `json:"contextPath" toml:"contextPath" mapstructure:"contextPath"` // the nacos server contextpath
+
+	LogLevel string `json:"logLevel" toml:"logLevel" mapstructure:"logLevel"` //
 }
 
 func (nc *NacosConfig) Equals(newConf *NacosConfig) bool {
@@ -87,8 +87,12 @@ type NacosJobFileConfig struct {
 	Outfile string `json:"outfile" toml:"outfile" mapstructure:"outfile"`
 }
 
+// 直接访问资源（用于 fetch、push）
+type DirectConfig struct {
+	//config.NacosConfig `mapstructure:",squash"`
+	NacosCfg *NacosConfig `json:"nacos" toml:"nacos" mapstructure:"nacos"` // 连接配置
 
-
-
-
-
+	Group  string `json:"group" toml:"group" mapstructure:"group"`    // 资源组
+	DataId string `json:"dataId" toml:"dataId" mapstructure:"dataId"` // 资源 ID
+	File   string `json:"file" toml:"file" mapstructure:"file"`       // 输入或输出文件
+}

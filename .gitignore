@@ -3,3 +3,6 @@ log/
 test/cache/
 test/log/
 .vscode
+*.toml
+build.bat
+api.rest

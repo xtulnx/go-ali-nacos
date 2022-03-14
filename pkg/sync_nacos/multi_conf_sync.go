@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"go-ali-nacos/pkg/common"
 	"go-ali-nacos/pkg/config"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
@@ -100,7 +101,7 @@ func (n *Node) writeFile(dataId, group, outfile string) {
 			return
 		}
 		// 需要写文件
-		err = os.WriteFile(outfile, []byte(data), os.ModePerm)
+		err = common.WriteFile(outfile, data)
 		if err != nil {
 			zap.L().Error("write file error", zap.Error(err))
 			return

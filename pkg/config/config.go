@@ -74,7 +74,7 @@ type NacosJobConfig struct {
 func (nc *NacosJobConfig) Equals(newConf *NacosJobConfig) bool {
 	if nc.Exec == newConf.Exec {
 		// 需要判断数据是否相等
-		
+
 	}
 	return false
 }
@@ -86,3 +86,9 @@ type NacosJobFileConfig struct {
 	// 特殊文件：SYSCONF://{可选配置Id} 用于重新加载配置
 	Outfile string `json:"outfile" toml:"outfile" mapstructure:"outfile"`
 }
+
+
+
+
+
+

@@ -61,3 +61,4 @@ func InitZapLogger(logFolder, logName string, minLevel zapcore.Level) {
 func customTimeEncoder(time time.Time, encoder zapcore.PrimitiveArrayEncoder) {
 	encoder.AppendString(time.Format("2006-01-02 15:04:05.000000"))
 }
+

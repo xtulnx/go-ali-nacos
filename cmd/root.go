@@ -17,68 +17,18 @@
 package cmd
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
-
-	"go-ali-nacos/pkg/config"
-	"go-ali-nacos/pkg/logs"
-	"go-ali-nacos/pkg/sync_nacos"
-
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
-	"github.com/spf13/viper"
 )
-
-var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:   "go-ali-nacos",
 	Short: "同步 nacos 配置",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		var cfg config.Config
-		err = viper.Unmarshal(&cfg, func(c *mapstructure.DecoderConfig) {
-			c.WeaklyTypedInput = true
-		})
-		if err != nil {
-			zap.L().Fatal("获取本地配置文件Unmarshal出错", zap.Error(err))
-		}
-		root := sync_nacos.NewNode(&cfg, "", "")
-		root.Watch()
-		interrupt := make(chan os.Signal, 1)
-		signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
-		<-interrupt
-		root.UnWatch()
-		// ctx, cancel := context.WithCancel(context.Background())
-		// defer cancel()
-		// wg := sync.WaitGroup{}
-		// wg.Add(1)
-		// go func() {
-		// 	defer wg.Done()
-		// 	err = sync_nacos.Main(ctx, cfg)
-		// 	if err != nil {
-		// 		log.Fatal(err)
-		// 	}
-		// }()
-		// wg.Add(1)
-		// go func() {
-		// 	defer wg.Done()
-		// 	select {
-		// 	case <-interrupt:
-		// 		log.Println("interrupt")
-		// 		cancel()
-		// 		break
-		// 	case <-ctx.Done():
-		// 		log.Println("cancel")
-		// 		break
-		// 	}
-		// }()
-		// wg.Wait()
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd:   true,
+		DisableNoDescFlag:   false,
+		DisableDescriptions: false,
+		HiddenDefaultCmd:    false,
 	},
 }
 
@@ -89,45 +39,11 @@ func Execute() {
 }
 
 func init() {
-	logs.InitZapLogger("log", "nacos", zapcore.DebugLevel)
-	cobra.OnInitialize(initConfig)
-
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-ali-nacos.yaml)")
-
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".go-ali-nacos" (without extension).
-		viper.AddConfigPath("./config")
-		viper.AddConfigPath("./")
-		viper.AddConfigPath(home)
-		viper.SetConfigType("toml")
-		viper.SetConfigName(".ali-nacos")
-	}
-
-	viper.SetEnvPrefix("j00")
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		zap.L().Debug("config file path", zap.String("file", viper.ConfigFileUsed()))
-	} else {
-		zap.L().Fatal("config file is not exists", zap.String("file", viper.ConfigFileUsed()))
-	}
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

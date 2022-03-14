@@ -16,8 +16,17 @@
 
 package main
 
-import "go-ali-nacos/cmd"
+import (
+	"go-ali-nacos/cmd"
+	"go-ali-nacos/pkg/logs"
+
+	"go.uber.org/zap/zapcore"
+)
 
 func main() {
 	cmd.Execute()
+}
+
+func init() {
+	logs.InitZapLogger("log", "nacos", zapcore.DebugLevel)
 }

@@ -3,6 +3,7 @@ package sync_nacos
 import (
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"go-ali-nacos/pkg/config"
 	"go.uber.org/zap"
@@ -44,7 +45,6 @@ func getClient(cfg config.DirectConfig) (config_client.IConfigClient, error) {
 	if cfg.DataId == "" || cfg.Group == "" {
 		return nil, fmt.Errorf("缺少目标资源")
 	}
-	cfg.NacosCfg.LogLevel = "error"
 	client, err := NewClient(*cfg.NacosCfg)
 	if err != nil {
 		return nil, err
@@ -105,11 +105,12 @@ func Push(c config.DirectConfig) error {
 			zap.L().Fatal("请指定push的数据!")
 		}
 	}
-	_, err = client.PublishConfig(vo.ConfigParam{
-		DataId:  c.DataId,
-		Group:   c.Group,
-		Content: content,
-	})
+	logger.GetLogger().Debugf("content: [%s]", content)
+	if content == "" {
+		_, err = client.DeleteConfig(vo.ConfigParam{DataId: c.DataId, Group: c.Group})
+	} else {
+		_, err = client.PublishConfig(vo.ConfigParam{DataId: c.DataId, Group: c.Group, Content: content})
+	}
 	if err != nil {
 		zap.L().Fatal("push配置数据出错", zap.String("dataId", c.DataId), zap.String("group", c.Group), zap.Error(err))
 	}

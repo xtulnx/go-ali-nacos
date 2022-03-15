@@ -18,14 +18,18 @@ import (
 var fetchCmd = &cobra.Command{
 	Use:   "fetch",
 	Short: "获取远程配置",
-	Long:  `获取远程配置,获取到的数据直接显示在控制台`,
+	Long:  `获取到的数据默认显示在控制台`,
 	Run: func(cmd *cobra.Command, args []string) {
 		bindDirect(cmd)
+		_ = viper.BindPFlag("file", cmd.Flags().Lookup("file"))
 		var cfg config.DirectConfig
 		if err := viper.Unmarshal(&cfg, func(dc *mapstructure.DecoderConfig) {
 			dc.WeaklyTypedInput = true
 		}); err != nil {
 			fmt.Println(err)
+		}
+		if cfgQuiet && cfg.NacosCfg != nil && cfg.NacosCfg.LogLevel == "" {
+			cfg.NacosCfg.LogLevel = "error"
 		}
 		err := sync_nacos.Fetch(cfg)
 		if err != nil {
@@ -36,5 +40,5 @@ var fetchCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(fetchCmd)
-	initDirect(fetchCmd)
+	fetchCmd.Flags().StringP("file", "f", "", "输出路径，默认使用 stdout")
 }

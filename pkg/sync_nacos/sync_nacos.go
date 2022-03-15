@@ -7,6 +7,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"go-ali-nacos/pkg/config"
 	"io"
@@ -78,6 +79,11 @@ func findSchema(s string) string {
 func NewClient(cfgNacos config.NacosConfig) (config_client.IConfigClient, error) {
 	if cfgNacos.NamespaceId == "" {
 		return nil, fmt.Errorf("缺少 namespaceId")
+	}
+	if cfgNacos.LogLevel != "" {
+		_ = logger.InitLogger(logger.Config{
+			Level: cfgNacos.LogLevel,
+		})
 	}
 	clientConfig := &constant.ClientConfig{
 		//

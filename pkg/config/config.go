@@ -42,7 +42,7 @@ type NacosConfig struct {
 	Password    string `json:"password" toml:"password" mapstructure:"password"`          // the password for nacos auth
 	ContextPath string `json:"contextPath" toml:"contextPath" mapstructure:"contextPath"` // the nacos server contextpath
 
-	LogLevel string `json:"logLevel" toml:"logLevel" mapstructure:"logLevel"` //
+	LogLevel string `json:"logLevel" toml:"logLevel" mapstructure:"logLevel"` // 日志等级 debug,info,warn,error，默认是 info
 }
 
 func (nc *NacosConfig) Equals(newConf *NacosConfig) bool {

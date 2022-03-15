@@ -18,9 +18,6 @@ package main
 
 import (
 	"go-ali-nacos/cmd"
-	"go-ali-nacos/pkg/logs"
-
-	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -28,5 +25,4 @@ func main() {
 }
 
 func init() {
-	logs.InitZapLogger("log", "nacos", zapcore.DebugLevel)
 }

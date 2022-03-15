@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"context"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -27,6 +28,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
@@ -60,12 +62,34 @@ var rootCmd = &cobra.Command{
 		if cfgQuiet && cfg.NacosCfg.LogLevel == "" {
 			cfg.NacosCfg.LogLevel = "error"
 		}
-		root := sync_nacos.NewNode(&cfg.Config, cfg.Group, cfg.DataId)
-		root.Watch()
 		interrupt := make(chan os.Signal, 1)
 		signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
-		<-interrupt
-		root.UnWatch()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := sync_nacos.Main(ctx, cfg.Config, cfg.Group, cfg.DataId)
+			if err != nil {
+				log.Fatal(err)
+			}
+			cancel()
+		}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			select {
+			case <-interrupt:
+				log.Println("interrupt")
+				cancel()
+				break
+			case <-ctx.Done():
+				log.Println("cancel")
+				break
+			}
+		}()
+		wg.Wait()
 	},
 }
 
@@ -119,6 +143,7 @@ func initDirect(cmd *cobra.Command, flags *pflag.FlagSet) {
 
 // 关联参数
 func bindDirect(cmd *cobra.Command) {
+	viper.SetDefault("nacos.loglevel","")
 	_ = viper.BindPFlag("nacos.endpoint", cmd.Flags().Lookup("endpoint"))
 	_ = viper.BindPFlag("nacos.namespaceId", cmd.Flags().Lookup("namespaceId"))
 	_ = viper.BindPFlag("nacos.accessKey", cmd.Flags().Lookup("ak"))

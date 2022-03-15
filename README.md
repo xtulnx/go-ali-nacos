@@ -5,28 +5,46 @@
 
 ## 目标
 
-* [x] 自动拉取配置，并写入约定的文件中。
+* [x] 自动拉取远端资源，并写入约定的文件中。
+  * nacos 约定只能使用文本 
+  * 如果需要使用二进制资源，可以配置路径方式重新下载，或使用 base64 编码
 * [x] 在配置更新后，触发约定的外部命令，如刷新 nginx 等
-* [ ] 支持多配置文件模式
-	* 配置动态导入方式
-        * 如 `outfile="SYSCONF://..."`
-    * 树形结构，多实例化
-        * 子实例树可以销毁
+  * 环境变量自动继承，并扩展
+    * OUTFILE 指向下载的本地资源路径
+    * CONTENT 当输出为 SYSMEM:// 时，这里是目标资源的内容（纯文本）
+* [x] 支持多配置文件模式
 * [ ] 约定内置命令
 
 ## 配置示例
 
-* 环境变量:
-  * J00_ENDPOINT=xxx.com
-  * env J00_NACOS.ENDPOINT=b.com  go run main.go
+* 用法:
 
+    ```shell
+    作为守护进程监听配置中心数据变动,同步配置
 
-* 配置文件
+    Available Commands:
+      fetch       获取远程配置
+      help        Help about any command
+      push        推送配置
+
+    Flags:
+          --ak string            远程配置连接参数,accessKey
+          --config string        配置文件 (默认查找 .go-ali-nacos.yaml)
+      -d, --dataId string        数据id
+      -e, --endpoint string      需要连接的远程配置地址如: acm.aliyun.com (公网)
+      -g, --group string         数据分组
+      -h, --help                 查看帮助
+      -n, --namespaceId string   远程配置的命名空间
+      -q, --quiet                安静模式
+          --sk string            远程配置连接参数,secretKey
+    ```
+
+* 配置文件（示例）
 
 ```toml
 [nacos]
-# 外部只能「公网」的地址，
-# 阿里云 内部 ECS 可以直接访问当地 的配置中心，不用 ak/sk
+# 阿里云外部只能使用「公网」的地址，
+# 内部 ECS 可以直接访问当地 的配置中心（namespaceId），不用 ak/sk
 endpoint = "acm.aliyun.com"
 namespaceId = "34f3****-****-****-****-****454f5184"
 accessKey = "L**********************q"
@@ -38,31 +56,31 @@ regionId=""
 username=""
 password=""
 contentPath=""
+loglevel = ""
 
-## 任务项：Nginx
+## 任务项
 [[nacosJobs]]
 # 可执行的命令
-exec = "/usr/local/nginx/sbin/nginx"
-# 参数
-params = ["-s", "reload"]
-
-
-## 任务项：shell
-[[nacosJobs]]
 exec = "sh"
-params = [
-    "-c",
-  ## 多行脚本
-"""
-echo "hoho"
-sleep 10
-""",
-]
+# 参数
+params = ["-c", """
+echo "这里是自定义脚本"
+""",]
+# 任务项：资源
 [[nacosJobs.file]]
-dataId = "local.dev.conf"
+dataId = "nginx.base.tar.gz"
 group = "nginx_local"
-outfile = "log/local.dev.conf"
+outfile = "SYSMEM://"
+
+## 任务项：子配置
+[[nacosJobs]]
+[[nacosJobs.file]]
+dataId = "part2.toml"
+group = "nginx_local"
+outfile = "SYSCONF://"
 ```
+
+* 环境变量:
 
 ## 实践
 
@@ -103,11 +121,7 @@ outfile = "log/local.dev.conf"
     ./jNacos fetch -g dev_cd -d l1.tar.gz | base64 -d | tar -xOz LICENSE | head -3
     ```
 
-### 多配置依赖
-
-TODO:
-
 ### 复杂脚本
 
-TODO:
+参考 ./docs/testful.sh
 

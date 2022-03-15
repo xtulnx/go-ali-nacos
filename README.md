@@ -11,8 +11,12 @@
 * [x] 在配置更新后，触发约定的外部命令，如刷新 nginx 等
   * 环境变量自动继承，并扩展
     * OUTFILE 指向下载的本地资源路径
-    * CONTENT 当输出为 SYSMEM:// 时，这里是目标资源的内容（纯文本）
+    * CONTENT 当输出(outfile)为 `SYSMEM://` 时，这里是目标资源的内容（纯文本）
 * [x] 支持多配置文件模式
+  * 通过 `nacosJobs.file.outfile` 来控制:
+    * `SYSCONF://` 表示目标资源是一个子配置
+      * 默认参数 `-d 资源ID -g 分组` 会自动补上 `nacosJobs.file.outfile=SYSCONF://`
+    * `SYSMEM://` 表示目标资源下载在内存，对应到环境变量 `CONTENT`
 * [ ] 约定内置命令
 
 ## 配置示例
@@ -86,7 +90,7 @@ outfile = "SYSCONF://"
 
 > 说明：
 > 
-> 这里假定已经在 `.ali-nacos.toml` 中配置 ACM 基本参数。
+> 这里假定已经在 `./.ali-nacos.toml` 中配置 ACM 基本参数。
 > 
 > 如 endpoint、namespaceId、accessKey、secretKey 。
 > 详情见 [官网](https://acmnext.console.aliyun.com/)

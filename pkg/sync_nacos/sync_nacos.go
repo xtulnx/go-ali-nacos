@@ -322,6 +322,7 @@ func (J *SyncNacos) onChange(ctx context.Context, group, dataId, data string) {
 					zap.S().Warnf("[FAIL]ExtendSub %s/%s/%s: %v", J.namespaceId, group, dataId, err)
 					return
 				}
+				env = append(env, "CONTENT="+data)
 			case config.SCHEME_SYS_MEMORY:
 				env = append(env, "CONTENT="+data)
 			default:
